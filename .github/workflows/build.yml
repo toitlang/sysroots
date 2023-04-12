@@ -52,6 +52,8 @@ jobs:
           # Set an output parameter `uname` for use in subsequent steps
           run: |
             cd /
+            ls
+            ls usr
             tar c -zf /artifacts/sysroot.tar.gz bin lib include usr/bin usr/lib usr/include
 
       - uses: actions/upload-artifact@v3
