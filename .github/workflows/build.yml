@@ -52,12 +52,10 @@ jobs:
           # Set an output parameter `uname` for use in subsequent steps
           run: |
             cd /
-            ls
-            ls usr
             shopt -s extglob
             tar c -zf /artifacts/sysroot.tar.gz *(bin|lib|include|usr/bin|usr/lib|usr/include|usr/local/bin|usr/local/lib|usr/local/include)
 
       - uses: actions/upload-artifact@v3
         with:
           name: sysroot
-          path: /artifacts/sysroot.tar.gz
+          path: artifacts/sysroot.tar.gz
