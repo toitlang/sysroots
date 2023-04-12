@@ -53,6 +53,11 @@ jobs:
           run: |
             cd /
             shopt -s extglob
+            echo "1"
+            ls -d *(bin|lib|include|usr/bin|usr/lib|usr/include|usr/local/bin|usr/local/lib|usr/local/include)
+            echo "2"
+            ls -d bin lib include usr/bin usr/lib usr/include usr/local/bin usr/local/lib usr/local/include
+            echo "3"
             tar c -zf /artifacts/sysroot.tar.gz *(bin|lib|include|usr/bin|usr/lib|usr/include|usr/local/bin|usr/local/lib|usr/local/include)
 
       - uses: actions/upload-artifact@v3
