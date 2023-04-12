@@ -54,7 +54,7 @@ jobs:
             cd /
             ls
             ls usr
-            tar c -zf /artifacts/sysroot.tar.gz bin lib include usr/bin usr/lib usr/include
+            tar c -zf /artifacts/sysroot.tar.gz bin usr/bin usr/lib usr/include
 
       - uses: actions/upload-artifact@v3
         with:
