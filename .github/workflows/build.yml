@@ -8,14 +8,19 @@ on:
 
 jobs:
   build:
+    name: Build sysroot for ${{ matrix.arch }}
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        arch: [armv7, aarch64, riscv64, s390x, ppc64le]
 
     steps:
       - uses: uraimo/run-on-arch-action@v2
         name: Run commands
         id: runcmd
         with:
-          arch: aarch64
+          arch: ${{ matrix.arch }}
           distro: ubuntu20.04
 
           # Not required, but speeds up builds by storing container images in
@@ -50,13 +55,12 @@ jobs:
 
           shell: /bin/bash
 
-          # Set an output parameter `uname` for use in subsequent steps
           run: |
             cd /
             shopt -s extglob
-            tar c -zf /artifacts/sysroot.tar.gz *(bin|lib|include) usr/*(bin|lib|include) usr/local/*(bin|lib|include)
+            tar c -zf /artifacts/sysroot-${{ matrix.arch }}.tar.gz *(bin|lib|include) usr/*(bin|lib|include) usr/local/*(bin|lib|include)
 
       - uses: actions/upload-artifact@v3
         with:
           name: sysroot
-          path: artifacts/sysroot.tar.gz
+          path: artifacts/sysroot-${{ matrix.arch }}.tar.gz
