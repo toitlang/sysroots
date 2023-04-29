@@ -64,3 +64,14 @@ jobs:
         with:
           name: sysroot
           path: artifacts/sysroot-${{ matrix.arch }}.tar.gz
+
+      - name: Upload release artifacts
+        if: |
+          github.event_name == 'release' &&
+          github.repository_owner == 'toitlang'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/sysroot-${{ matrix.arch }}.tar.gz
+          tag: ${{ github.ref }}
+          overwrite: true
