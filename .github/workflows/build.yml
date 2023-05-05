@@ -97,7 +97,7 @@ jobs:
           # Run the command in a child bash instead.
           bash <<'EOF'
             shopt -s extglob
-            tar c -zf sysroot-raspbian.tar.gz *(bin|lib|include) usr/*(bin|lib|include)
+            tar c -zf sysroot-raspbian.tar.gz *(lib|include) usr/*(lib|include)
           EOF
 
       - uses: actions/upload-artifact@v3
@@ -142,7 +142,12 @@ jobs:
           # Run the command in a child bash instead.
           bash <<'EOF'
             shopt -s extglob
-            tar c -zf sysroot-arm-linux-gnueabi.tar.gz *(bin|lib|include) usr/*(bin|lib|include)
+            tar c -zf sysroot-arm-linux-gnueabi.tar.gz \
+              *(lib|include) \
+              usr/*(lib|include) \
+              arm-linux-gnueabi/*(lib|include) \
+              arm-linux-gnueabi/libc/*(lib|include) \
+              arm-linux-gnueabi/libc/usr/*(lib|include)
           EOF
 
       - uses: actions/upload-artifact@v3
