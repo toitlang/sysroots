@@ -57,7 +57,7 @@ jobs:
           run: |
             cd /
             shopt -s extglob
-            tar c -zf /artifacts/sysroot-${{ matrix.arch }}.tar.gz *(bin|lib|include) usr/*(bin|lib|include) usr/local/*(bin|lib|include)
+            tar c -zf /artifacts/sysroot-${{ matrix.arch }}.tar.gz *(lib|include) usr/*(lib|include) usr/local/*(lib|include)
 
       - uses: actions/upload-artifact@v3
         with:
