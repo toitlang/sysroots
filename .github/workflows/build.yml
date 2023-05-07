@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-qemu:
     name: Build sysroot for ${{ matrix.arch }}
     runs-on: ubuntu-latest
 
@@ -72,5 +72,96 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: artifacts/sysroot-${{ matrix.arch }}.tar.gz
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  build-raspbian:
+    name: Build sysroot for Raspbian
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build
+        run: |
+          # The sysroot script doesn't like symlinks in the path.
+          # We shouldn't need it here, but doesn't hurt either.
+          third_party/rpi/sysroot.py \
+              --distro raspbian \
+              --sysroot $(realpath .) \
+              libc6-dev libstdc++-6-dev
+
+      - name: Compress
+        run: |
+          # shopt doesn't work for the bash script that is already running.
+          # Run the command in a child bash instead.
+          bash <<'EOF'
+            shopt -s extglob
+            tar c -zf sysroot-raspbian.tar.gz *(lib|include) usr/*(lib|include)
+          EOF
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sysroot
+          path: sysroot-raspbian.tar.gz
+
+      - name: Upload release artifacts
+        if: |
+          github.event_name == 'release' &&
+          github.repository_owner == 'toitlang'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: sysroot-raspbian.tar.gz
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  build-linaro:
+    name: Build sysroot for Linaro
+    runs-on: ubuntu-latest
+
+    env:
+      ARM_LINUX_GNUEABI_SYSROOT_URL: https://releases.linaro.org/components/toolchain/binaries/latest-7/arm-linux-gnueabi/sysroot-glibc-linaro-2.25-2019.12-arm-linux-gnueabi.tar.xz
+      ARM_LINUX_GNUEABI_GCC_TOOLCHAIN_URL: https://releases.linaro.org/components/toolchain/binaries/latest-7/arm-linux-gnueabi/gcc-linaro-7.5.0-2019.12-i686_arm-linux-gnueabi.tar.xz
+
+    steps:
+      - name: Download
+        run: |
+          curl --location --output sysroot.tar.xz $ARM_LINUX_GNUEABI_SYSROOT_URL
+          curl --location --output gcc.tar.xz $ARM_LINUX_GNUEABI_GCC_TOOLCHAIN_URL
+
+      - name: Extract
+        run: |
+          tar x --strip-components=1 -f sysroot.tar.xz
+          tar x --strip-components=1 -f gcc.tar.xz
+
+      - name: Compress
+        shell: bash
+        run: |
+          # shopt doesn't work for the bash script that is already running.
+          # Run the command in a child bash instead.
+          bash <<'EOF'
+            shopt -s extglob
+            tar c -zf sysroot-arm-linux-gnueabi.tar.gz \
+              *(lib|include) \
+              usr/*(lib|include) \
+              arm-linux-gnueabi/*(lib|include) \
+              arm-linux-gnueabi/libc/*(lib|include) \
+              arm-linux-gnueabi/libc/usr/*(lib|include)
+          EOF
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: sysroot
+          path: sysroot-arm-linux-gnueabi.tar.gz
+
+      - name: Upload release artifacts
+        if: |
+          github.event_name == 'release' &&
+          github.repository_owner == 'toitlang'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: sysroot-arm-linux-gnueabi.tar.gz
           tag: ${{ github.ref }}
           overwrite: true
