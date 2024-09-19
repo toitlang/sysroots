@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       packages:
-        description: 'list of packages to build'
+        description: 'List of packages to build'
         required: false
         type: string
         default: ''
