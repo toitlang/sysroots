@@ -116,6 +116,7 @@ jobs:
               --distro raspbian \
               --sysroot $(realpath .) \
               libc6-dev libstdc++-6-dev \
+              libgpiod-dev \
               $PACKAGES
 
       - name: Compress
