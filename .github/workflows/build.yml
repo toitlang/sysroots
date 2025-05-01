@@ -31,12 +31,12 @@ jobs:
         run: |
           echo "PACKAGES=${{ github.event.inputs.packages }}" >> $GITHUB_ENV
 
-      - uses: uraimo/run-on-arch-action@v2
+      - uses: uraimo/run-on-arch-action@v3
         name: Run commands
         id: runcmd
         with:
           arch: ${{ matrix.arch }}
-          distro: ubuntu20.04
+          distro: ubuntu22.04
 
           # Not required, but speeds up builds by storing container images in
           # a GitHub package registry.
@@ -76,7 +76,7 @@ jobs:
             shopt -s extglob
             tar c -zf /artifacts/sysroot-${{ matrix.arch }}.tar.gz *(lib|include) usr/*(lib|include) usr/local/*(lib|include)
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: sysroot
           path: artifacts/sysroot-${{ matrix.arch }}.tar.gz
@@ -106,7 +106,7 @@ jobs:
         run: |
           echo "PACKAGES=${{ github.event.inputs.packages }}" >> $GITHUB_ENV
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Build
         run: |
@@ -128,7 +128,7 @@ jobs:
             tar c -zf sysroot-raspbian.tar.gz *(lib|include) usr/*(lib|include)
           EOF
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: sysroot
           path: sysroot-raspbian.tar.gz
@@ -178,7 +178,7 @@ jobs:
               arm-linux-gnueabi/libc/usr/*(lib|include)
           EOF
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: sysroot
           path: sysroot-arm-linux-gnueabi.tar.gz
