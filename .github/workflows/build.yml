@@ -78,7 +78,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: sysroot
+          name: sysroot-${{ matrix.arch }}
           path: artifacts/sysroot-${{ matrix.arch }}.tar.gz
 
       - name: Upload release artifacts
@@ -130,7 +130,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: sysroot
+          name: sysroot-raspbian
           path: sysroot-raspbian.tar.gz
 
       - name: Upload release artifacts
@@ -180,7 +180,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: sysroot
+          name: sysroot-arm-linux-gnueabi
           path: sysroot-arm-linux-gnueabi.tar.gz
 
       - name: Upload release artifacts
