@@ -67,6 +67,7 @@ jobs:
               unzip \
               wget \
               zip \
+              zlib1g-dev \
               ${{env.PACKAGES}}
 
           shell: /bin/bash
