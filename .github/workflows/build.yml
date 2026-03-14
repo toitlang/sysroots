@@ -24,6 +24,7 @@ jobs:
     env:
       # For workflow dispatches the value will be overridden by the input.
       PACKAGES:
+      DISTRO: ubuntu22.04
 
     steps:
       - name: Set packages variable
@@ -36,7 +37,7 @@ jobs:
         id: runcmd
         with:
           arch: ${{ matrix.arch }}
-          distro: ubuntu22.04
+          distro: ${{ env.DISTRO }}
 
           # Not required, but speeds up builds by storing container images in
           # a GitHub package registry.
@@ -71,16 +72,16 @@ jobs:
               ${{env.PACKAGES}}
 
           shell: /bin/bash
-
           run: |
             cd /
             shopt -s extglob
             tar c -zf /artifacts/sysroot-${{ matrix.arch }}.tar.gz *(lib|include) usr/*(lib|include) usr/local/*(lib|include)
+            cp /artifacts/sysroot-${{ matrix.arch }}.tar.gz /artifacts/sysroot-${{ matrix.arch }}-${{ env.DISTRO }}.tar.gz
 
       - uses: actions/upload-artifact@v7
         with:
           name: sysroot-${{ matrix.arch }}
-          path: artifacts/sysroot-${{ matrix.arch }}.tar.gz
+          path: artifacts/sysroot-${{ matrix.arch }}*.tar.gz
 
       - name: Upload release artifacts
         if: |
@@ -89,7 +90,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: artifacts/sysroot-${{ matrix.arch }}.tar.gz
+          file: artifacts/sysroot-${{ matrix.arch }}*.tar.gz
+          file_glob: true
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -108,6 +110,10 @@ jobs:
           echo "PACKAGES=${{ github.event.inputs.packages }}" >> $GITHUB_ENV
 
       - uses: actions/checkout@v6
+ 
+      - name: Get version
+        run: |
+          echo "VERSION=$(third_party/rpi/sysroot.py --distro raspbian --print-default-version)" >> $GITHUB_ENV
 
       - name: Build
         run: |
@@ -116,7 +122,7 @@ jobs:
           third_party/rpi/sysroot.py \
               --distro raspbian \
               --sysroot $(realpath .) \
-              libc6-dev libstdc++-6-dev \
+              libc6-dev libstdc++-10-dev \
               libgpiod-dev \
               $PACKAGES
 
@@ -127,12 +133,13 @@ jobs:
           bash <<'EOF'
             shopt -s extglob
             tar c -zf sysroot-raspbian.tar.gz *(lib|include) usr/*(lib|include)
+            cp sysroot-raspbian.tar.gz sysroot-raspbian-${{ env.VERSION }}.tar.gz
           EOF
 
       - uses: actions/upload-artifact@v7
         with:
           name: sysroot-raspbian
-          path: sysroot-raspbian.tar.gz
+          path: sysroot-raspbian*.tar.gz
 
       - name: Upload release artifacts
         if: |
@@ -141,7 +148,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: sysroot-raspbian.tar.gz
+          file: sysroot-raspbian*.tar.gz
+          file_glob: true
           tag: ${{ github.ref }}
           overwrite: true
 
@@ -154,6 +162,10 @@ jobs:
       ARM_LINUX_GNUEABI_GCC_TOOLCHAIN_URL: https://releases.linaro.org/components/toolchain/binaries/latest-7/arm-linux-gnueabi/gcc-linaro-7.5.0-2019.12-i686_arm-linux-gnueabi.tar.xz
 
     steps:
+      - name: Get version
+        run: |
+          VERSION=$(echo ${{ env.ARM_LINUX_GNUEABI_SYSROOT_URL }} | grep -oP 'glibc-linaro-\K[0-9.]+(?=-)')
+          echo "VERSION=glibc$VERSION" >> $GITHUB_ENV
       - name: Download
         run: |
           curl --location --output sysroot.tar.xz $ARM_LINUX_GNUEABI_SYSROOT_URL
@@ -177,12 +189,13 @@ jobs:
               arm-linux-gnueabi/*(lib|include) \
               arm-linux-gnueabi/libc/*(lib|include) \
               arm-linux-gnueabi/libc/usr/*(lib|include)
+            cp sysroot-arm-linux-gnueabi.tar.gz sysroot-arm-linux-gnueabi-${{ env.VERSION }}.tar.gz
           EOF
 
       - uses: actions/upload-artifact@v7
         with:
           name: sysroot-arm-linux-gnueabi
-          path: sysroot-arm-linux-gnueabi.tar.gz
+          path: sysroot-arm-linux-gnueabi*.tar.gz
 
       - name: Upload release artifacts
         if: |
@@ -191,6 +204,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: sysroot-arm-linux-gnueabi.tar.gz
+          file: sysroot-arm-linux-gnueabi*.tar.gz
+          file_glob: true
           tag: ${{ github.ref }}
           overwrite: true

@@ -4,7 +4,7 @@ from urllib.request import urlopen, urlretrieve
 from urllib.parse import urlparse
 from gzip import GzipFile
 from pathlib import Path
-import subprocess 
+import subprocess
 import tarfile
 import shutil
 import pickle
@@ -12,11 +12,11 @@ import os
 
 # WARNING: this script does not verify integrity and signature of packages!
 
-RASPBIAN_VERSION = "buster"
+RASPBIAN_VERSION = "bullseye"
 RASPBIAN_ARCHIVE = "http://archive.raspberrypi.org/debian"
 RASPBIAN_MAIN = "http://raspbian.raspberrypi.org/raspbian"
 
-UBUNTU_VERSION = "bionic"
+UBUNTU_VERSION = "jammy"
 UBUNTU_MAIN = "http://ports.ubuntu.com/ubuntu-ports"
 UBUNTU_RPI = "http://ppa.launchpad.net/ubuntu-raspi2/ppa/ubuntu"
 
@@ -156,13 +156,23 @@ def resolve(package, packages, db):
 
 
 def install(distro, version, target, sysroot, packages):
-
   sysroot = Path(sysroot)
-  cache = sysroot / ".db.pickle"
+  if version is None:
+    if distro == "raspbian":
+      version = RASPBIAN_VERSION
+    elif distro == "ubuntu":
+      version = UBUNTU_VERSION
+    elif distro == "alpine":
+      version = ALPINE_VERSION
+
+  cache_name = f".db.{distro}.{version}.pickle"
+  if target:
+    cache_name = f".db.{distro}.{version}.{target}.pickle"
+  cache = sysroot / cache_name
 
   if cache.is_file():
     print("Loading package database...")
-    
+
     with open(cache, "rb") as f:
       db = pickle.load(f)
 
@@ -171,18 +181,14 @@ def install(distro, version, target, sysroot, packages):
 
   else:
     print("Downloading package database...")
-  
+
     db = {}
 
     if distro == "raspbian":
-      if version is None:
-        version = RASPBIAN_VERSION
       deb_collect_packages(RASPBIAN_ARCHIVE, version, "main", db)
       deb_collect_packages(RASPBIAN_MAIN, version, "main", db)
 
     elif distro == "ubuntu":
-      if version is None:
-        version = UBUNTU_VERSION
       deb_collect_packages(UBUNTU_RPI, version, "main", db)
       for section in ["main", "universe"]:
         deb_collect_packages(UBUNTU_MAIN, version, section, db)
@@ -201,10 +207,8 @@ def install(distro, version, target, sysroot, packages):
 
       for repo in ALARM_REPOS:
         alarm_collect_packages(arch, repo, db)
-     
+
     elif distro == "alpine":
-      if version is None:
-        version = ALPINE_VERSION
       if target is None:
         raise Exception("ALPINE target not specified (use --target argument)")
       elif target.startswith("aarch64"):
@@ -271,9 +275,27 @@ if __name__ == "__main__":
   ap.add_argument("--distro", required=True, choices=["raspbian", "ubuntu", "alarm", "alpine"], help="distribution to use")
   ap.add_argument("--version", help=f"distribution version to use for raspbian/ubuntu/alpine (default: {RASPBIAN_VERSION}/{UBUNTU_VERSION}/{ALPINE_VERSION})")
   ap.add_argument("--target", help="target to download for alarm or alpine (ex: armv6l-unknown-linux-gnueabihf)")
-  ap.add_argument("--sysroot", required=True, help="sysroot folder")
-  ap.add_argument("packages", nargs="+")
+  ap.add_argument("--sysroot", help="sysroot folder")
+  ap.add_argument("--print-default-version", action="store_true", help="print default version for the given distro")
+  ap.add_argument("packages", nargs="*")
   args = ap.parse_args()
+
+  if args.print_default_version:
+    if args.distro == "raspbian":
+      print(RASPBIAN_VERSION)
+    elif args.distro == "ubuntu":
+      print(UBUNTU_VERSION)
+    elif args.distro == "alpine":
+      print(ALPINE_VERSION)
+    else:
+      raise Exception(f"No default version for {args.distro}")
+    exit(0)
+
+  if not args.packages:
+    ap.error("the following arguments are required: packages")
+
+  if not args.sysroot:
+    ap.error("the following arguments are required: --sysroot")
 
   os.makedirs(args.sysroot, exist_ok=True)
   install(args.distro, args.version, args.target, args.sysroot, args.packages)
